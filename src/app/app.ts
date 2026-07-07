@@ -1,9 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+
+import { StarshipGridComponent } from './features/starship-grid/starship-grid';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [StarshipGridComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

@@ -37,9 +37,9 @@ export class SwapiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = 'https://swapi.dev/api/starships/';
 
-  getStarships(page: number = 1): Observable<SwapiResponse> {
+  getStarships(page: number = 1, search?: string): Observable<SwapiResponse> {
     return this.http.get<SwapiResponse>(this.baseUrl, {
-      params: { page }
+      params: search ? { page, search } : { page }
     });
   }
 }

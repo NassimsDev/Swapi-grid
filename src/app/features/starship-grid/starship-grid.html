@@ -1,8 +1,23 @@
-<div class="overflow-x-auto">
-  <ag-grid-angular
-    class="ag-theme-alpine h-[500px] w-full"
-    [rowData]="starships()"
-    [columnDefs]="colDefs"
-    [theme]="'legacy'"
-  />
+<div class="flex h-dvh w-full flex-col">
+  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 p-4">
+    <h1 class="text-xl font-semibold">Star Wars Fleet</h1>
+    <input
+      type="search"
+      placeholder="Search starships by name"
+      class="w-64 rounded border border-gray-300 px-3 py-1.5 text-sm"
+      (input)="onSearchInputChange($event)"
+    />
+  </header>
+
+  <div class="flex-1 overflow-x-auto">
+    <ag-grid-angular
+      class="ag-theme-alpine h-full w-full"
+      [columnDefs]="colDefs"
+      [rowModelType]="'infinite'"
+      [datasource]="dataSource"
+      [cacheBlockSize]="cacheBlockSize"
+      [theme]="'legacy'"
+      (gridReady)="onGridReady($event)"
+    />
+  </div>
 </div>

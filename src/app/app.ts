@@ -5,8 +5,7 @@ import { StarshipGridComponent } from './features/starship-grid/starship-grid';
 @Component({
   selector: 'app-root',
   imports: [StarshipGridComponent],
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  templateUrl: './app.html'
 })
 export class App {
   protected readonly title = signal('swapi-grid');

@@ -9,7 +9,12 @@
     />
   </header>
 
-  <div class="flex-1 overflow-x-auto">
+  <div class="relative flex-1 overflow-x-auto">
+    @if (isLoading()) {
+      <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
+        <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+      </div>
+    }
     <ag-grid-angular
       class="ag-theme-alpine h-full w-full"
       [columnDefs]="colDefs"
@@ -18,6 +23,7 @@
       [cacheBlockSize]="cacheBlockSize"
       [theme]="'legacy'"
       (gridReady)="onGridReady($event)"
+      (cellValueChanged)="onCellValueChanged($event)"
     />
   </div>
 </div>

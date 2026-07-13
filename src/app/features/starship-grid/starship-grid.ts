@@ -31,6 +31,9 @@ export class StarshipGridComponent {
 
   searchTerm = signal('');
   isLoading = signal(true);
+  hasError = signal(false);
+  totalCount = signal<number | null>(null);
+  reachedEnd = signal(false);
 
   cacheBlockSize = PAGE_SIZE;
 
@@ -72,8 +75,19 @@ export class StarshipGridComponent {
           }),
         )
         .subscribe({
-          next: (response) => params.successCallback(response.results, response.count),
-          error: () => params.failCallback(),
+          next: (response) => {
+            if (isFirstBlock) {
+              this.hasError.set(false);
+            }
+            this.totalCount.set(response.count);
+            params.successCallback(response.results, response.count);
+          },
+          error: () => {
+            if (isFirstBlock) {
+              this.hasError.set(true);
+            }
+            params.failCallback();
+          },
         });
     },
   };
@@ -91,11 +105,26 @@ export class StarshipGridComponent {
 
   onSearch(query: string): void {
     this.searchTerm.set(query);
+    this.reachedEnd.set(false);
+    this.gridApi?.purgeInfiniteCache();
+  }
+
+  onRetry(): void {
+    this.hasError.set(false);
     this.gridApi?.purgeInfiniteCache();
   }
 
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
+  }
+
+  onBodyScrollEnd(): void {
+    const total = this.totalCount();
+    if (total === null || !this.gridApi) {
+      return;
+    }
+
+    this.reachedEnd.set(this.gridApi.getLastDisplayedRowIndex() >= total - 1);
   }
 
   onCellValueChanged(event: CellValueChangedEvent<Starship>): void {

@@ -14,6 +14,17 @@
       <div class="absolute inset-0 z-10 flex items-center justify-center bg-white/60">
         <div class="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
       </div>
+    } @else if (hasError()) {
+      <div class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white">
+        <p class="text-sm text-gray-700">Failed to load starships. Please try again.</p>
+        <button
+          type="button"
+          class="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+          (click)="onRetry()"
+        >
+          Retry
+        </button>
+      </div>
     }
     <ag-grid-angular
       class="ag-theme-alpine h-full w-full"
@@ -24,6 +35,13 @@
       [theme]="'legacy'"
       (gridReady)="onGridReady($event)"
       (cellValueChanged)="onCellValueChanged($event)"
+      (bodyScrollEnd)="onBodyScrollEnd()"
     />
   </div>
+
+  @if (reachedEnd()) {
+    <footer class="border-t border-gray-200 px-4 py-2 text-center text-xs text-gray-500">
+      End of list — {{ totalCount() }} starship{{ totalCount() === 1 ? '' : 's' }} total
+    </footer>
+  }
 </div>

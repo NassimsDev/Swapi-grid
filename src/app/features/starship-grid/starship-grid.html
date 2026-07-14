@@ -7,6 +7,9 @@
       class="w-64 rounded border border-gray-300 px-3 py-1.5 text-sm"
       (input)="onSearchInputChange($event)"
     />
+    @if (searchTerm() && !isLoading() && totalCount() !== null) {
+      <span class="text-sm text-gray-500">{{ totalCount() }} result{{ totalCount() === 1 ? '' : 's' }} found</span>
+    }
   </header>
 
   <div class="relative flex-1 overflow-x-auto">
@@ -35,6 +38,7 @@
       [cacheBlockSize]="cacheBlockSize"
       [theme]="'legacy'"
       [animateRows]="false"
+      [enableCellTextSelection]="true"
       (gridReady)="onGridReady($event)"
       (cellValueChanged)="onCellValueChanged($event)"
       (bodyScrollEnd)="onBodyScrollEnd()"
@@ -43,7 +47,7 @@
 
   @if (reachedEnd()) {
     <footer class="border-t border-gray-200 px-4 py-2 text-center text-xs text-gray-500 ">
-      End of list — {{ totalCount() }} starship{{ totalCount() === 1 ? '' : 's' }} total
+      End of list - {{ totalCount() }} starship{{ totalCount() === 1 ? '' : 's' }} total
     </footer>
   }
 </div>

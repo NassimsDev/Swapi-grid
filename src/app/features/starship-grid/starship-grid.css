@@ -1,0 +1,29 @@
+/* AG Grid's theme sets its own font family independently of Tailwind's
+   --font-sans, so it must be overridden separately to match. */
+.ag-theme-alpine {
+  --ag-font-family: 'Inter', ui-sans-serif, sans-serif;
+}
+
+/* AG Grid hides the sort icon (`.ag-hidden`, `!important`) until a column is
+   actually sorted. There's no colDef hook to reach that internal icon markup
+   with Tailwind classes, so preview it on hover with plain overrides here. */
+
+/* Unsorted -> hovering previews the ascending arrow the next click would apply. */
+.ag-header-cell-sortable[aria-sort="none"]:hover .ag-sort-ascending-icon.ag-hidden {
+  display: inline-flex !important;
+  opacity: 0.4;
+}
+
+/* Sorted ascending -> hovering previews the next click switching to descending. */
+.ag-header-cell-sortable[aria-sort="ascending"]:hover .ag-sort-ascending-icon {
+  display: none !important;
+}
+.ag-header-cell-sortable[aria-sort="ascending"]:hover .ag-sort-descending-icon.ag-hidden {
+  display: inline-flex !important;
+  opacity: 0.4;
+}
+
+/* Sorted descending -> hovering previews the next click clearing the sort. */
+.ag-header-cell-sortable[aria-sort="descending"]:hover .ag-sort-descending-icon {
+  display: none !important;
+}

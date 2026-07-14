@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ViewEncapsulation, inject, signal } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   AllCommunityModule,
@@ -24,21 +24,35 @@ const PAGE_SIZE = 10;
 // pilots.length is already numeric but shares the same numeric-compare path.
 const NUMERIC_SORT_COLUMN_IDS = new Set(['pilots.length', 'crew', 'passengers', 'cargo_capacity']);
 
-function parseNumericValue(value: unknown): number {
+// SWAPI uses "unknown" (and similar non-numeric text) as a null placeholder in
+// otherwise-numeric fields. Treat it as null so it can always sort last below.
+function parseNumericValue(value: unknown): number | null {
   if (typeof value === 'number') {
     return value;
   }
   if (typeof value !== 'string') {
-    return Number.POSITIVE_INFINITY;
+    return null;
   }
   const match = value.replace(/,/g, '').match(/-?\d+(\.\d+)?/);
-  return match ? parseFloat(match[0]) : Number.POSITIVE_INFINITY;
+  return match ? parseFloat(match[0]) : null;
+}
+
+function compareNumeric(a: number | null, b: number | null, direction: number): number {
+  if (a === null || b === null) {
+    return a === b ? 0 : a === null ? 1 : -1;
+  }
+  return (a - b) * direction;
 }
 
 @Component({
   selector: 'app-starship-grid',
   imports: [AgGridAngular],
   templateUrl: './starship-grid.html',
+  styleUrl: './starship-grid.css',
+  // This stylesheet targets AG Grid's internally-rendered DOM (not part of
+  // Angular's own template) and a Tailwind @theme override meant to apply
+  // globally, so it must not be scoped to this component.
+  encapsulation: ViewEncapsulation.None,
 })
 export class StarshipGridComponent {
   private readonly swapiService = inject(SwapiService);
@@ -195,7 +209,7 @@ export class StarshipGridComponent {
       const bValue = this.getFieldValue(b, colId);
 
       if (NUMERIC_SORT_COLUMN_IDS.has(colId)) {
-        return (parseNumericValue(aValue) - parseNumericValue(bValue)) * direction;
+        return compareNumeric(parseNumericValue(aValue), parseNumericValue(bValue), direction);
       }
 
       return String(aValue ?? '').localeCompare(String(bValue ?? '')) * direction;

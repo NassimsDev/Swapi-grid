@@ -84,14 +84,40 @@ export class StarshipGridComponent {
       sortable: false,
       filter: false,
     },
-    { field: 'name', headerName: 'Name', resizable: true },
-    { field: 'starship_class', headerName: 'Class', resizable: true },
-    { field: 'model', headerName: 'Model', resizable: true },
-    { field: 'manufacturer', headerName: 'Manufacturer', resizable: true },
-    { field: 'pilots.length', headerName: 'Known Pilots', resizable: false },
-    { field: 'crew', headerName: 'Crew', resizable: false },
-    { field: 'passengers', headerName: 'Passengers', resizable: false },
-    { field: 'cargo_capacity', headerName: 'cargo capacity', resizable: false, editable: true },
+    { field: 'name', headerName: 'Name', resizable: true, headerClass: 'border-r border-gray-200 hdr-icon-name' },
+    {
+      field: 'starship_class',
+      headerName: 'Class',
+      resizable: true,
+      headerClass: 'border-r border-gray-200 hdr-icon-class',
+    },
+    { field: 'model', headerName: 'Model', resizable: true, headerClass: 'border-r border-gray-200 hdr-icon-model' },
+    {
+      field: 'manufacturer',
+      headerName: 'Manufacturer',
+      resizable: true,
+      headerClass: 'border-r border-gray-200 hdr-icon-manufacturer',
+    },
+    {
+      field: 'pilots.length',
+      headerName: 'Known Pilots',
+      resizable: false,
+      headerClass: 'border-r border-gray-200 hdr-icon-pilots',
+    },
+    { field: 'crew', headerName: 'Crew', resizable: false, headerClass: 'border-r border-gray-200 hdr-icon-crew' },
+    {
+      field: 'passengers',
+      headerName: 'Passengers',
+      resizable: false,
+      headerClass: 'border-r border-gray-200 hdr-icon-passengers',
+    },
+    {
+      field: 'cargo_capacity',
+      headerName: 'cargo capacity',
+      resizable: false,
+      editable: true,
+      headerClass: 'border-r border-gray-200 hdr-icon-cargo',
+    },
   ];
 
   dataSource: IDatasource = {

@@ -5,6 +5,7 @@
 @import "@fontsource/inter/700.css";
 @import "../node_modules/ag-grid-community/styles/ag-grid.css";
 @import "../node_modules/ag-grid-community/styles/ag-theme-alpine.css";
+@import "../node_modules/material-icons/iconfont/material-icons.css";
 
 /* Must stay in this entry stylesheet: Tailwind only bakes @theme overrides
    into Preflight's base styles (e.g. body's font-family) when they're part

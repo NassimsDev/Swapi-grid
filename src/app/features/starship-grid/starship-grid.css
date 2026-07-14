@@ -2,6 +2,7 @@
    --font-sans, so it must be overridden separately to match. */
 .ag-theme-alpine {
   --ag-font-family: 'Inter', ui-sans-serif, sans-serif;
+  --ag-header-background-color: #fff;
 }
 
 /* AG Grid hides the sort icon (`.ag-hidden`, `!important`) until a column is
@@ -26,4 +27,52 @@
 /* Sorted descending -> hovering previews the next click clearing the sort. */
 .ag-header-cell-sortable[aria-sort="descending"]:hover .ag-sort-descending-icon {
   display: none !important;
+}
+
+/* Column header icons (Material Icons). There's no colDef hook to put an icon
+   inside the header's text node, so each column gets a marker class (via
+   headerClass) and the icon is injected as ::before content on that class. */
+.ag-header-cell-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #9ca3af;
+}
+
+.hdr-icon-name .ag-header-cell-text::before,
+.hdr-icon-class .ag-header-cell-text::before,
+.hdr-icon-model .ag-header-cell-text::before,
+.hdr-icon-manufacturer .ag-header-cell-text::before,
+.hdr-icon-pilots .ag-header-cell-text::before,
+.hdr-icon-crew .ag-header-cell-text::before,
+.hdr-icon-passengers .ag-header-cell-text::before,
+.hdr-icon-cargo .ag-header-cell-text::before {
+  font-family: 'Material Icons';
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hdr-icon-name .ag-header-cell-text::before {
+  content: 'rocket_launch';
+}
+.hdr-icon-class .ag-header-cell-text::before {
+  content: 'category';
+}
+.hdr-icon-model .ag-header-cell-text::before {
+  content: 'widgets';
+}
+.hdr-icon-manufacturer .ag-header-cell-text::before {
+  content: 'factory';
+}
+.hdr-icon-pilots .ag-header-cell-text::before {
+  content: 'badge';
+}
+.hdr-icon-crew .ag-header-cell-text::before {
+  content: 'groups';
+}
+.hdr-icon-passengers .ag-header-cell-text::before {
+  content: 'airline_seat_recline_normal';
+}
+.hdr-icon-cargo .ag-header-cell-text::before {
+  content: 'inventory_2';
 }

@@ -1,12 +1,17 @@
 <div class="flex h-dvh w-full flex-col">
   <header class="flex flex-wrap items-center gap-4 border-b border-gray-200 p-4">
     <h1 class="text-xl font-semibold">Star Wars Fleet</h1>
-    <input
-      type="search"
-      placeholder="Search starships by name"
-      class="w-64 rounded border border-gray-300 px-3 py-1.5 text-sm"
-      (input)="onSearchInputChange($event)"
-    />
+    <div class="relative">
+      <span class="material-icons pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-base text-gray-400">
+        search
+      </span>
+      <input
+        type="search"
+        placeholder="Search starships by name"
+        class="w-64 rounded border border-gray-300 py-1.5 pr-3 pl-8 text-sm focus:border-[#405DFF] focus:outline-none"
+        (input)="onSearchInputChange($event)"
+      />
+    </div>
     @if (searchTerm() && !isLoading() && totalCount() !== null) {
       <span class="text-sm text-gray-500">{{ totalCount() }} result{{ totalCount() === 1 ? '' : 's' }} found</span>
     }

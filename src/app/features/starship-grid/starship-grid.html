@@ -1,5 +1,5 @@
 <div class="flex h-dvh w-full flex-col">
-  <header class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 p-4">
+  <header class="flex flex-wrap items-center gap-4 border-b border-gray-200 p-4">
     <h1 class="text-xl font-semibold">Star Wars Fleet</h1>
     <input
       type="search"
@@ -29,6 +29,7 @@
     <ag-grid-angular
       class="ag-theme-alpine h-full w-full"
       [columnDefs]="colDefs"
+      [defaultColDef]="defaultColDef"
       [rowModelType]="'infinite'"
       [datasource]="dataSource"
       [cacheBlockSize]="cacheBlockSize"
@@ -41,7 +42,7 @@
   </div>
 
   @if (reachedEnd()) {
-    <footer class="border-t border-gray-200 px-4 py-2 text-center text-xs text-gray-500">
+    <footer class="border-t border-gray-200 px-4 py-2 text-center text-xs text-gray-500 ">
       End of list — {{ totalCount() }} starship{{ totalCount() === 1 ? '' : 's' }} total
     </footer>
   }

@@ -37,6 +37,11 @@ export class StarshipGridComponent {
 
   cacheBlockSize = PAGE_SIZE;
 
+  defaultColDef: ColDef = {
+    cellClass: '!border-r !border-gray-100',
+    headerClass: 'border-r border-gray-200',
+  };
+
   colDefs: ColDef[] = [
     {
       headerName: '#',

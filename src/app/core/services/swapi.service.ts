@@ -68,7 +68,7 @@ export class SwapiService {
     );
   }
 
-  private getAllStarships(): Observable<Starship[]> {
+  getAllStarships(): Observable<Starship[]> {
     return this.getStarships(1).pipe(
       switchMap((first) => {
         const totalPages = Math.ceil(first.count / first.results.length);

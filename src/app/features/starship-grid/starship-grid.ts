@@ -9,6 +9,7 @@ import {
   IDatasource,
   IGetRowsParams,
   ModuleRegistry,
+  SortModelItem,
 } from 'ag-grid-community';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs/operators';
@@ -18,6 +19,21 @@ import { Starship, SwapiService } from '../../core/services/swapi.service';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const PAGE_SIZE = 10;
+
+// crew/passengers/cargo_capacity are raw SWAPI strings (e.g. "30-165", "1,000,000", "unknown").
+// pilots.length is already numeric but shares the same numeric-compare path.
+const NUMERIC_SORT_COLUMN_IDS = new Set(['pilots.length', 'crew', 'passengers', 'cargo_capacity']);
+
+function parseNumericValue(value: unknown): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value !== 'string') {
+    return Number.POSITIVE_INFINITY;
+  }
+  const match = value.replace(/,/g, '').match(/-?\d+(\.\d+)?/);
+  return match ? parseFloat(match[0]) : Number.POSITIVE_INFINITY;
+}
 
 @Component({
   selector: 'app-starship-grid',
@@ -40,10 +56,12 @@ export class StarshipGridComponent {
   defaultColDef: ColDef = {
     cellClass: '!border-r !border-gray-100',
     headerClass: 'border-r border-gray-200',
+    sortable: true,
   };
 
   colDefs: ColDef[] = [
     {
+      colId: 'rowNumber',
       headerName: '#',
       valueGetter: (params) => (params.node?.rowIndex ?? 0) + 1,
       pinned: 'left',
@@ -59,7 +77,7 @@ export class StarshipGridComponent {
     { field: 'pilots.length', headerName: 'Known Pilots', resizable: false },
     { field: 'crew', headerName: 'Crew', resizable: false },
     { field: 'passengers', headerName: 'Passengers', resizable: false },
-    {field: 'cargo_capacity', headerName: 'cargo capacity' , resizable: false , editable: true }
+    { field: 'cargo_capacity', headerName: 'cargo capacity', resizable: false, editable: true },
   ];
 
   dataSource: IDatasource = {
@@ -71,14 +89,20 @@ export class StarshipGridComponent {
       }
 
       const search = this.searchTerm();
-      const request$ = search
-        ? this.swapiService.searchStarshipsByName(search).pipe(
-            map((results) => ({
-              results: results.slice(params.startRow, params.endRow),
-              count: results.length,
-            })),
-          )
-        : this.swapiService.getStarships(Math.floor(params.startRow / PAGE_SIZE) + 1);
+      const sortModel = params.sortModel;
+
+      const request$ =
+        search || sortModel.length
+          ? (search ? this.swapiService.searchStarshipsByName(search) : this.swapiService.getAllStarships()).pipe(
+              map((results) => {
+                const sorted = this.applySort(results, sortModel);
+                return {
+                  results: sorted.slice(params.startRow, params.endRow),
+                  count: sorted.length,
+                };
+              }),
+            )
+          : this.swapiService.getStarships(Math.floor(params.startRow / PAGE_SIZE) + 1);
 
       request$
         .pipe(
@@ -151,6 +175,30 @@ export class StarshipGridComponent {
 
     this.swapiService.updateStarship(event.data, changes).subscribe({
       error: () => event.node.setDataValue(field, event.oldValue),
+    });
+  }
+
+  private getFieldValue(item: Starship, colId: string): unknown {
+    return colId.split('.').reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], item);
+  }
+
+  private applySort(items: Starship[], sortModel: SortModelItem[]): Starship[] {
+    if (!sortModel.length) {
+      return items;
+    }
+
+    const { colId, sort } = sortModel[0];
+    const direction = sort === 'desc' ? -1 : 1;
+
+    return [...items].sort((a, b) => {
+      const aValue = this.getFieldValue(a, colId);
+      const bValue = this.getFieldValue(b, colId);
+
+      if (NUMERIC_SORT_COLUMN_IDS.has(colId)) {
+        return (parseNumericValue(aValue) - parseNumericValue(bValue)) * direction;
+      }
+
+      return String(aValue ?? '').localeCompare(String(bValue ?? '')) * direction;
     });
   }
 }

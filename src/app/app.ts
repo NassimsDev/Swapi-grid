@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 
 import { StarshipGridComponent } from './features/starship-grid/starship-grid';
 
@@ -7,6 +7,4 @@ import { StarshipGridComponent } from './features/starship-grid/starship-grid';
   imports: [StarshipGridComponent],
   templateUrl: './app.html'
 })
-export class App {
-  protected readonly title = signal('swapi-grid');
-}
+export class App {}

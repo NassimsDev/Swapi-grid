@@ -38,6 +38,15 @@ export class StarshipGridComponent {
   cacheBlockSize = PAGE_SIZE;
 
   colDefs: ColDef[] = [
+    {
+      headerName: '#',
+      valueGetter: (params) => (params.node?.rowIndex ?? 0) + 1,
+      pinned: 'left',
+      width: 60,
+      resizable: false,
+      sortable: false,
+      filter: false,
+    },
     { field: 'name', headerName: 'Name', resizable: true },
     { field: 'starship_class', headerName: 'Class', resizable: true },
     { field: 'model', headerName: 'Model', resizable: true },

@@ -2,6 +2,16 @@
 
 A front-end-only Angular app that browses SWAPI starship data in an AG Grid data grid, with infinite scroll, search, sorting, and one client-side-editable column.
 
+**Live demo:** https://swapi-grid.netlify.app
+
+| Layer | Choice | Why |
+|---|---|---|
+| Framework | Angular 21 (standalone, zoneless, signals) | Modern Angular defaults: no NgModules, no zone.js — all rendered state lives in signals, which makes change detection explicit and predictable. |
+| Data grid | AG Grid Community 36 | Ships an Infinite Row Model out of the box, which maps naturally onto SWAPI's page-based API. |
+| Styling | Tailwind CSS 4 | Utility-first styling directly in templates; v4's CSS-first config (`@theme`) removes the JS config file entirely. |
+| Async | RxJS 7.8 | Search debouncing, request caching/sharing, and parallel page fetching are all one-operator concerns. |
+| Tests | Vitest 4 (via `ng test`) | The test runner integrated with Angular's esbuild builder. |
+
 ## Install and run
 
 ```bash
@@ -9,41 +19,68 @@ npm install
 npm start        # ng serve — http://localhost:4200
 ```
 
-- `npm run build` — production build to `dist/`
-- `npm test` — unit tests (`ng test`, powered by Vitest)
+| Command | What it does |
+|---|---|
+| `npm start` | Dev server with hot reload on http://localhost:4200 |
+| `npm run build` | Production build to `dist/swapi-grid/browser` |
+| `npm test` | Unit tests (Vitest, jsdom environment, no real network) |
 
 ## SWAPI resource
 
-`https://swapi.dev/api/starships/` — the Starships endpoint. See [swapi.service.ts](src/app/core/services/swapi.service.ts).
+`https://swapi.dev/api/starships/` — the **Starships** endpoint. See [swapi.service.ts](src/app/core/services/swapi.service.ts).
+
+The API is paginated (10 results per page, `count` gives the grand total) and **read-only** — two facts that drive most of the design decisions below.
 
 ## Infinite scroll and the "no loader while scrolling" behavior
 
-- AG Grid's Infinite Row Model (`rowModelType: 'infinite'`) is used, with `cacheBlockSize` set to match SWAPI's own page size (10). A custom `IDatasource` (`dataSource` in [starship-grid.ts](src/app/features/starship-grid/starship-grid.ts)) maps each block AG Grid requests directly onto one SWAPI page (or, while a search/sort is active, a slice of the full locally-fetched dataset — see Trade-offs below).
-- The loading overlay (`isLoading` signal) is only toggled for the very first block (`params.startRow === 0`). Every subsequent block requested by scrolling never touches `isLoading`, so no loader appears once the initial rows are on screen.
-- Each SWAPI page is cached in `SwapiService.getStarships()` (a `Map<page, Observable>` with `shareReplay(1)`), so re-scrolling past already-seen rows never re-fetches them. A failed request evicts its own cache entry (`catchError` + `cache.delete`) so Retry actually re-fetches instead of replaying the cached error.
+AG Grid's Infinite Row Model (`rowModelType: 'infinite'`) pulls rows block-by-block from a custom `IDatasource` (`dataSource` in [starship-grid.ts](src/app/features/starship-grid/starship-grid.ts)) as the user scrolls.
+
+| Decision | How | Why |
+|---|---|---|
+| 1 grid block = 1 SWAPI page | `cacheBlockSize` is set to 10, SWAPI's own page size | Each block AG Grid requests maps exactly onto one API page — no overfetching, no client-side re-slicing in the nominal case. |
+| Loader on first load only | `isLoading` is toggled **only** when `params.startRow === 0` | Scroll-triggered blocks load silently; rows just appear when ready. The spinner is only shown before the very first rows exist. |
+| Pages are never fetched twice | `SwapiService` caches a `Map<page, Observable>` with `shareReplay(1)` | Scrolling back up (or re-requesting a block) replays the cached response instantly — zero network traffic for already-seen pages. |
+| Failed requests don't poison the cache | `catchError` evicts the failed page from the `Map` | Without eviction, the cached observable would replay the *error* forever and the Retry button would be useless. |
+| Errors are recoverable | Error overlay + Retry button; Retry calls `purgeInfiniteCache()` | AG Grid re-requests its blocks, which now miss the cache and hit the network again. |
 
 ## Editable column and where edits are stored
 
-- `cargo_capacity` is the editable column (`editable: true`).
-- On edit, `onCellValueChanged` calls `SwapiService.updateStarship()`. SWAPI itself is read-only, so this method does **not** call the API — it resolves to the merged object in memory. AG Grid's own row-data model holds the new value, so it's visible for the rest of the session but is **not persisted anywhere** (no backend, no `localStorage`): a page refresh reverts it to the original SWAPI value. If the update observable ever errors, the cell is rolled back to its previous value via `node.setDataValue(field, oldValue)`.
+**`cargo_capacity`** is the editable column.
+
+| Aspect | Implementation |
+|---|---|
+| Input validation | `cellEditor: 'agNumberCellEditor'` with `min: 0` — the editor renders `<input type="number">`, so non-numeric characters are physically blocked at the keystroke and negative values are rejected. |
+| Save flow | `onCellValueChanged` → `SwapiService.updateStarship()`. Only events with `source === 'edit'` are handled, so programmatic value changes never trigger a save (and can't loop). |
+| Where the value lives | **In AG Grid's in-memory row model only.** SWAPI is read-only, so `updateStarship()` resolves to the merged object without calling the API. The edit survives scrolling within the session but a page refresh restores the original SWAPI value. No backend, no `localStorage` — by design, per the brief. |
+| Failure handling | Optimistic update with rollback: if the update observable errors, the cell is restored via `node.setDataValue(field, oldValue)`. |
+| Future-proofing | Swapping the fake write for a real one is a one-line change inside `updateStarship()` (`http.patch(...)`) — the component wiring (including rollback) is already backend-ready. |
 
 ## Column resizing
 
-Native AG Grid Community behavior: `resizable: true` on the text columns (Name, Class, Model, Manufacturer). The narrow numeric columns (#, Known Pilots, Crew, Passengers, cargo capacity) are fixed-width (`resizable: false`) since their content is short and consistent. No custom resize logic was written.
+Native AG Grid Community behavior — no custom resize logic was written.
+
+| Columns | `resizable` | Rationale |
+|---|---|---|
+| Name, Class, Model, Manufacturer | `true` | Free-text fields with highly variable length — worth letting the user widen them. |
+| #, Known Pilots, Crew, Passengers, cargo capacity | `false` | Short, consistent numeric content; fixed widths keep the layout stable. |
 
 ## Trade-offs and limitations
 
-- Search only matches the `name` field. SWAPI's own `?search=` parameter also matches `model`, so it can't be used directly — search instead fetches (and caches) every page client-side and filters locally by name.
-- For the same reason, any active column sort switches the grid off the paginated per-page endpoint onto the full, locally-fetched-and-sorted dataset. The first search or sort in a session pays for all page requests up front; subsequent ones reuse the cached pages.
-- Because SWAPI is read-only, edited `cargo_capacity` values are never persisted server-side — they live only in AG Grid's in-memory row model for the current session.
-- Numeric columns (Known Pilots, Crew, Passengers, cargo capacity) are raw SWAPI strings (e.g. `"30-165"`, `"1,000,000"`, `"unknown"`) parsed to a number for sorting; unparseable values (`"unknown"`) are treated as null and always sort last, regardless of sort direction.
-- No end-to-end/browser test coverage — functional verification during development was done manually in a real browser. Unit tests cover the service's pagination/caching logic and the grid's sort and edit behavior.
-- swapi.dev can be intermittently slow or unavailable; there's a Retry button on failure but no automatic retry/backoff.
+| Trade-off | Cause | Consequence |
+|---|---|---|
+| Search is client-side | SWAPI's `?search=` parameter also matches the `model` field, but the requirement was to match **`name` only** | Search fetches (and caches) every page once, then filters locally, case-insensitive, on `name`. |
+| Sorting is client-side | SWAPI has no server-side sort at all | An active sort switches the datasource from per-page fetching to the full locally-sorted dataset, sliced per block. The first search/sort in a session pays for all page requests up front (36 ships → 4 requests, parallelized with `forkJoin`); every later one reuses the cache. |
+| Edits are not persisted | SWAPI is read-only | Edited values live only in the grid's memory for the current session (see above). |
+| Numeric fields are messy strings | SWAPI returns `"30-165"`, `"1,000,000"`, `"unknown"`, `"n/a"` | A parser strips thousands separators and extracts the first number; unparseable values become `null` and **always sort last, regardless of sort direction** — "unknown" never tops a ranking. |
+| No e2e test suite | Scope decision | Functional verification was done manually in a real browser during development. Unit tests (11) cover the service's pagination/caching and the grid's sorting/editing logic, with HTTP and the service mocked. |
+| Availability depends on swapi.dev | Free third-party API, occasionally slow or down | Failures show an error overlay with a Retry button; there is no automatic retry/backoff. |
 
 ## Third-party packages
 
-- `ag-grid-angular` / `ag-grid-community` — the data grid itself (infinite row model, sorting, cell editing).
-- `tailwindcss` (v4) — all styling.
-- `@fontsource/inter` — self-hosted Inter font (no external font CDN).
-- `rxjs` — already an Angular dependency; used for debouncing the search input and caching/sharing HTTP requests.
-- [Material Icons](https://fonts.google.com/icons) — column header icons.
+| Package | Role | Note |
+|---|---|---|
+| `ag-grid-angular` / `ag-grid-community` | The data grid | Infinite Row Model, sorting UI, cell editing. Legacy CSS theming (`[theme]="'legacy'"` + imported theme CSS). |
+| `tailwindcss` (v4) + `@tailwindcss/postcss` | All styling | Wired through `.postcssrc.json` (the only PostCSS config Angular's builder reads). Plain CSS is used only where Tailwind can't reach: AG Grid's internally-rendered DOM. |
+| `@fontsource/inter` | Inter font | Self-hosted through npm — no font CDN at runtime. |
+| `material-icons` | Column header + search icons | Self-hosted icon font (ligature-based); header icons are injected via `::before` on per-column marker classes, keeping AG Grid's native header (sorting) intact. |
+| `rxjs` | Async plumbing | Already an Angular dependency; used for the 300 ms search debounce, `shareReplay` caching, and `forkJoin` page fetching. |

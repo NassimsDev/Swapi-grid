@@ -116,6 +116,8 @@ export class StarshipGridComponent {
       headerName: 'cargo capacity',
       resizable: false,
       editable: true,
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: { min: 0 },
       headerClass: 'border-r border-gray-200 hdr-icon-cargo',
     },
   ];

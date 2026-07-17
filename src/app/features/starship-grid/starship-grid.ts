@@ -12,7 +12,7 @@ import {
   SortModelItem,
 } from 'ag-grid-community';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
 
 import { Starship, SwapiService } from '../../core/services/swapi.service';
 
@@ -55,9 +55,13 @@ function compareNumeric(a: number | null, b: number | null, direction: number): 
   encapsulation: ViewEncapsulation.None,
 })
 export class StarshipGridComponent {
+  private static readonly MAX_AUTO_RETRIES = 3;
+
   private readonly swapiService = inject(SwapiService);
   private readonly searchInput$ = new Subject<string>();
   private gridApi?: GridApi;
+  private autoRetryCount = 0;
+  private autoRetryTimer?: ReturnType<typeof setTimeout>;
 
   searchTerm = signal('');
   isLoading = signal(true);
@@ -146,29 +150,31 @@ export class StarshipGridComponent {
             )
           : this.swapiService.getStarships(Math.floor(params.startRow / PAGE_SIZE) + 1);
 
-      request$
-        .pipe(
-          finalize(() => {
-            if (isFirstBlock) {
+      request$.subscribe({
+        next: (response) => {
+          if (isFirstBlock) {
+            this.isLoading.set(false);
+            this.hasError.set(false);
+          }
+          this.autoRetryCount = 0;
+          this.totalCount.set(response.count);
+          params.successCallback(response.results, response.count);
+        },
+        error: () => {
+          params.failCallback();
+          // AG Grid never re-requests a failed block on its own, which would
+          // leave those rows permanently empty — so retry them ourselves.
+          const willRetry = this.scheduleBlockRetry();
+          if (isFirstBlock) {
+            if (willRetry) {
+              this.isLoading.set(true);
+            } else {
               this.isLoading.set(false);
-            }
-          }),
-        )
-        .subscribe({
-          next: (response) => {
-            if (isFirstBlock) {
-              this.hasError.set(false);
-            }
-            this.totalCount.set(response.count);
-            params.successCallback(response.results, response.count);
-          },
-          error: () => {
-            if (isFirstBlock) {
               this.hasError.set(true);
             }
-            params.failCallback();
-          },
-        });
+          }
+        },
+      });
     },
   };
 
@@ -186,12 +192,33 @@ export class StarshipGridComponent {
   onSearch(query: string): void {
     this.searchTerm.set(query);
     this.reachedEnd.set(false);
+    this.autoRetryCount = 0;
     this.gridApi?.purgeInfiniteCache();
   }
 
   onRetry(): void {
     this.hasError.set(false);
+    this.autoRetryCount = 0;
     this.gridApi?.purgeInfiniteCache();
+  }
+
+  // Schedules a single delayed cache purge so failed blocks get re-requested
+  // (already-loaded pages replay instantly from the service cache). Returns
+  // false once the retry budget is exhausted, so the caller can surface the
+  // error state instead.
+  private scheduleBlockRetry(): boolean {
+    if (this.autoRetryTimer) {
+      return true;
+    }
+    if (this.autoRetryCount >= StarshipGridComponent.MAX_AUTO_RETRIES) {
+      return false;
+    }
+    this.autoRetryCount++;
+    this.autoRetryTimer = setTimeout(() => {
+      this.autoRetryTimer = undefined;
+      this.gridApi?.purgeInfiniteCache();
+    }, 2000);
+    return true;
   }
 
   onGridReady(event: GridReadyEvent): void {

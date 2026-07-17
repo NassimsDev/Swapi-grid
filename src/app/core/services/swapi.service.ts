@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, of, throwError } from 'rxjs';
-import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
+import { Observable, defer, forkJoin, of, throwError } from 'rxjs';
+import { catchError, map, retry, shareReplay, switchMap, timeout } from 'rxjs/operators';
 
 export interface Starship {
   name: string;
@@ -46,7 +46,17 @@ export class SwapiService {
       return cached;
     }
 
-    const request$ = this.http.get<SwapiResponse>(this.baseUrl, { params: { page } }).pipe(
+    // `_ts` makes every request URL unique so neither the browser's HTTP cache
+    // nor swapi.dev's CDN can ever serve a stale or CORS-poisoned cached entry
+    // (swapi.dev sends no Cache-Control and emits Vary/CORS headers
+    // inconsistently, which intermittently breaks cached responses).
+    // `defer` rebuilds the request on each subscription so every retry attempt
+    // gets a fresh URL too.
+    const request$ = defer(() =>
+      this.http.get<SwapiResponse>(this.baseUrl, { params: { page, _ts: Date.now() } })
+    ).pipe(
+      timeout(10_000),
+      retry({ count: 2, delay: 1_000 }),
       shareReplay(1),
       catchError((error) => {
         this.cache.delete(key);

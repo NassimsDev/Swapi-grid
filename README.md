@@ -73,7 +73,7 @@ Native AG Grid Community behavior — no custom resize logic was written.
 | Edits are not persisted | SWAPI is read-only | Edited values live only in the grid's memory for the current session (see above). |
 | Numeric fields are messy strings | SWAPI returns `"30-165"`, `"1,000,000"`, `"unknown"`, `"n/a"` | A parser strips thousands separators and extracts the first number; unparseable values become `null` and **always sort last, regardless of sort direction** — "unknown" never tops a ranking. |
 | No e2e test suite | Scope decision | Functional verification was done manually in a real browser during development. Unit tests (11) cover the service's pagination/caching and the grid's sorting/editing logic, with HTTP and the service mocked. |
-| Availability depends on swapi.dev | Free third-party API, occasionally slow or down | Failures show an error overlay with a Retry button; there is no automatic retry/backoff. |
+| Availability depends on swapi.dev | Free third-party API, occasionally slow or down, and its CDN emits cache/CORS headers inconsistently (which can poison the browser's HTTP cache) | Three layers of resilience: every request carries a unique `_ts` param so no browser/CDN cache can ever serve a stale or CORS-broken entry; requests time out after 10 s and retry twice with a 1 s delay; blocks that still fail trigger up to 3 automatic grid-cache purges. Only after all that does the error overlay with its manual Retry button appear. |
 
 ## Third-party packages
 

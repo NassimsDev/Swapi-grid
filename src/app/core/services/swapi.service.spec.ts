@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Starship, SwapiResponse, SwapiService } from './swapi.service';
 
@@ -48,6 +48,7 @@ describe('SwapiService', () => {
 
   afterEach(() => {
     httpMock.verify();
+    vi.useRealTimers();
   });
 
   it('requests the given page number from the SWAPI starships endpoint', () => {
@@ -66,6 +67,35 @@ describe('SwapiService', () => {
 
     httpMock.expectOne(() => true).flush(makeResponse({ count: 1 }));
     httpMock.verify();
+  });
+
+  it('retries a failed page request before delivering an error', () => {
+    vi.useFakeTimers();
+    let result: SwapiResponse | undefined;
+    service.getStarships(1).subscribe((r) => (result = r));
+
+    httpMock.expectOne((r) => r.params.get('page') === '1').error(new ProgressEvent('error'));
+    vi.advanceTimersByTime(1000);
+    httpMock.expectOne((r) => r.params.get('page') === '1').flush(makeResponse({ count: 36 }));
+
+    expect(result?.count).toBe(36);
+  });
+
+  it('evicts a page that failed every retry so a later call re-fetches it', () => {
+    vi.useFakeTimers();
+    service.getStarships(1).subscribe({ error: () => {} });
+
+    httpMock.expectOne((r) => r.params.get('page') === '1').error(new ProgressEvent('error'));
+    vi.advanceTimersByTime(1000);
+    httpMock.expectOne((r) => r.params.get('page') === '1').error(new ProgressEvent('error'));
+    vi.advanceTimersByTime(1000);
+    httpMock.expectOne((r) => r.params.get('page') === '1').error(new ProgressEvent('error'));
+
+    let result: SwapiResponse | undefined;
+    service.getStarships(1).subscribe((r) => (result = r));
+    httpMock.expectOne((r) => r.params.get('page') === '1').flush(makeResponse({ count: 36 }));
+
+    expect(result?.count).toBe(36);
   });
 
   it('combines every page into a single, ordered list', () => {

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { CellValueChangedEvent, IGetRowsParams, SortModelItem } from 'ag-grid-community';
+import { CellValueChangedEvent, GridReadyEvent, IGetRowsParams, SortModelItem } from 'ag-grid-community';
 import { of, throwError } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Starship, SwapiService } from '../../core/services/swapi.service';
 import { StarshipGridComponent } from './starship-grid';
@@ -54,8 +54,36 @@ describe('StarshipGridComponent', () => {
     component = TestBed.createComponent(StarshipGridComponent).componentInstance;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('failed block recovery', () => {
+    it('automatically purges the grid cache so failed blocks are re-requested', () => {
+      vi.useFakeTimers();
+      const purgeInfiniteCache = vi.fn();
+      component.onGridReady({ api: { purgeInfiniteCache } } as unknown as GridReadyEvent);
+      swapiService.getStarships.mockReturnValue(throwError(() => new Error('offline')));
+
+      const failCallback = vi.fn();
+      component.dataSource.getRows({
+        startRow: 0,
+        endRow: 10,
+        sortModel: [],
+        successCallback: vi.fn(),
+        failCallback,
+      } as unknown as IGetRowsParams<Starship>);
+
+      expect(failCallback).toHaveBeenCalled();
+      expect(purgeInfiniteCache).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(2000);
+      expect(purgeInfiniteCache).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('sorting', () => {

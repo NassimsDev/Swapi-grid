@@ -2,9 +2,10 @@
   <header class="flex flex-wrap items-center gap-4 border-b border-gray-200 p-4">
     <h1 class="text-xl font-semibold">Star Wars Fleet</h1>
     <div class="relative">
-      <span class="material-icons pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-base text-gray-400">
-        search
-      </span>
+      <span
+        aria-hidden="true"
+        class="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-base leading-none text-gray-400 before:font-[family-name:lucide] before:content-[var(--icon-search)]"
+      ></span>
       <input
         type="search"
         placeholder="Search starships by name"
@@ -34,8 +35,13 @@
         </button>
       </div>
     }
+    <!-- The [&_...] arbitrary variants reach AG Grid's internally-rendered DOM
+         (sort-icon hover previews); the [-\-ag-*] utilities override the Alpine
+         theme's own variables, hence the trailing ! to beat its unlayered CSS.
+         They're applied both on this host and on the inner .ag-theme-alpine div
+         AG Grid renders inside itself, which re-declares every theme variable. -->
     <ag-grid-angular
-      class="ag-theme-alpine h-full w-full"
+      class="ag-theme-alpine h-full w-full [--ag-font-family:var(--font-sans)]! [--ag-header-background-color:#fff]! [&_.ag-theme-alpine]:[--ag-font-family:var(--font-sans)]! [&_.ag-theme-alpine]:[--ag-header-background-color:#fff]! [&_.ag-header-cell-sortable[aria-sort=none]:hover_.ag-sort-ascending-icon.ag-hidden]:inline-flex! [&_.ag-header-cell-sortable[aria-sort=none]:hover_.ag-sort-ascending-icon.ag-hidden]:opacity-40 [&_.ag-header-cell-sortable[aria-sort=ascending]:hover_.ag-sort-ascending-icon]:hidden! [&_.ag-header-cell-sortable[aria-sort=ascending]:hover_.ag-sort-descending-icon.ag-hidden]:inline-flex! [&_.ag-header-cell-sortable[aria-sort=ascending]:hover_.ag-sort-descending-icon.ag-hidden]:opacity-40 [&_.ag-header-cell-sortable[aria-sort=descending]:hover_.ag-sort-descending-icon]:hidden!"
       [columnDefs]="colDefs"
       [defaultColDef]="defaultColDef"
       [rowModelType]="'infinite'"

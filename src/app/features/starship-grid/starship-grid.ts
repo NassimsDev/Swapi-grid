@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   AllCommunityModule,
@@ -19,6 +19,16 @@ import { Starship, SwapiService } from '../../core/services/swapi.service';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const PAGE_SIZE = 10;
+
+const HEADER_CLASS = 'border-r border-gray-200 text-gray-400 text-sm';
+
+// Header icons are Lucide glyphs drawn on the header text's ::before via
+// Tailwind utilities; the codepoints live in @theme (--icon-*) in styles.css.
+// They target .ag-header-cell-text (through an arbitrary variant, since these
+// classes land on the header cell) because AG Grid already uses the header
+// cell's own ::before for its resize separator. Every candidate must appear
+// literally in this file — Tailwind scans source text, so no interpolation.
+const ICON_HEADER_CLASS = `${HEADER_CLASS} [&_.ag-header-cell-text]:inline-flex [&_.ag-header-cell-text]:items-center [&_.ag-header-cell-text]:gap-[5px] [&_.ag-header-cell-text]:before:font-[family-name:lucide] [&_.ag-header-cell-text]:before:text-lg [&_.ag-header-cell-text]:before:leading-none`;
 
 // crew/passengers/cargo_capacity are raw SWAPI strings (e.g. "30-165", "1,000,000", "unknown").
 // pilots.length is already numeric but shares the same numeric-compare path.
@@ -48,11 +58,6 @@ function compareNumeric(a: number | null, b: number | null, direction: number): 
   selector: 'app-starship-grid',
   imports: [AgGridAngular],
   templateUrl: './starship-grid.html',
-  styleUrl: './starship-grid.css',
-  // This stylesheet targets AG Grid's internally-rendered DOM (not part of
-  // Angular's own template) and a Tailwind @theme override meant to apply
-  // globally, so it must not be scoped to this component.
-  encapsulation: ViewEncapsulation.None,
 })
 export class StarshipGridComponent {
   private static readonly MAX_AUTO_RETRIES = 3;
@@ -73,7 +78,7 @@ export class StarshipGridComponent {
 
   defaultColDef: ColDef = {
     cellClass: '!border-r !border-gray-100',
-    headerClass: 'border-r border-gray-200',
+    headerClass: HEADER_CLASS,
     sortable: true,
   };
 
@@ -88,32 +93,47 @@ export class StarshipGridComponent {
       sortable: false,
       filter: false,
     },
-    { field: 'name', headerName: 'Name', resizable: true, headerClass: 'border-r border-gray-200 hdr-icon-name' },
+    {
+      field: 'name',
+      headerName: 'Name',
+      resizable: true,
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-plane)_/_'']`,
+    },
     {
       field: 'starship_class',
       headerName: 'Class',
       resizable: true,
-      headerClass: 'border-r border-gray-200 hdr-icon-class',
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-tag)_/_'']`,
     },
-    { field: 'model', headerName: 'Model', resizable: true, headerClass: 'border-r border-gray-200 hdr-icon-model' },
+    {
+      field: 'model',
+      headerName: 'Model',
+      resizable: true,
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-cpu)_/_'']`,
+    },
     {
       field: 'manufacturer',
       headerName: 'Manufacturer',
       resizable: true,
-      headerClass: 'border-r border-gray-200 hdr-icon-manufacturer',
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-factory)_/_'']`,
     },
     {
       field: 'pilots.length',
       headerName: 'Known Pilots',
       resizable: false,
-      headerClass: 'border-r border-gray-200 hdr-icon-pilots',
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-circle-user-round)_/_'']`,
     },
-    { field: 'crew', headerName: 'Crew', resizable: false, headerClass: 'border-r border-gray-200 hdr-icon-crew' },
+    {
+      field: 'crew',
+      headerName: 'Crew',
+      resizable: false,
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-users-round)_/_'']`,
+    },
     {
       field: 'passengers',
       headerName: 'Passengers',
       resizable: false,
-      headerClass: 'border-r border-gray-200 hdr-icon-passengers',
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-tickets-plane)_/_'']`,
     },
     {
       field: 'cargo_capacity',
@@ -122,7 +142,7 @@ export class StarshipGridComponent {
       editable: true,
       cellEditor: 'agNumberCellEditor',
       cellEditorParams: { min: 0 },
-      headerClass: 'border-r border-gray-200 hdr-icon-cargo',
+      headerClass: `${ICON_HEADER_CLASS} [&_.ag-header-cell-text]:before:content-[var(--icon-box)_/_'']`,
     },
   ];
 

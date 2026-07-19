@@ -5,12 +5,33 @@
 @import "@fontsource/inter/700.css";
 @import "../node_modules/ag-grid-community/styles/ag-grid.css";
 @import "../node_modules/ag-grid-community/styles/ag-theme-alpine.css";
-@import "../node_modules/material-icons/iconfont/material-icons.css";
 
-/* Must stay in this entry stylesheet: Tailwind only bakes @theme overrides
-   into Preflight's base styles (e.g. body's font-family) when they're part
-   of this same compilation pass — a component-scoped stylesheet is compiled
-   independently and can't affect it. */
+/* Lucide is consumed as a bare @font-face (instead of importing lucide.css)
+   so its ~1500 unused .icon-* utility rules stay out of the bundle. Glyphs
+   are rendered through Tailwind `before:content-[var(--icon-*)]` utilities. */
+@font-face {
+  font-family: 'lucide';
+  src: url('../node_modules/lucide-static/font/lucide.woff2') format('woff2');
+  font-display: block;
+}
+
+/* Tailwind theme config. Must stay in this entry stylesheet: Tailwind only
+   bakes @theme overrides into Preflight's base styles (e.g. body's
+   font-family) when they're part of this same compilation pass — a
+   component-scoped stylesheet is compiled independently and can't affect it. */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, sans-serif;
+
+  /* Lucide glyph codepoints (see lucide-static/font/codepoints.json). Declared
+     as theme tokens because backslash escapes can't survive inside Tailwind
+     class candidates scanned from TS/HTML source files. */
+  --icon-search: '\e151';
+  --icon-plane: '\e1de';
+  --icon-tag: '\e17f';
+  --icon-cpu: '\e0a9';
+  --icon-factory: '\e29f';
+  --icon-circle-user-round: '\e462';
+  --icon-users-round: '\e46e';
+  --icon-tickets-plane: '\e623';
+  --icon-box: '\e061';
 }

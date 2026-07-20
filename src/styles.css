@@ -11,7 +11,7 @@
    are rendered through Tailwind `before:content-[var(--icon-*)]` utilities. */
 @font-face {
   font-family: 'lucide';
-  src: url('../node_modules/lucide-static/font/lucide.woff2') format('woff2');
+  src: url('../node_modules/lucide-static/font/lucide.woff2') format('woff');
   font-display: block;
 }
 

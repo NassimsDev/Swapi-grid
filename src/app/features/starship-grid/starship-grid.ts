@@ -28,7 +28,7 @@ const HEADER_CLASS = 'border-r border-gray-200 text-gray-400 text-sm';
 // classes land on the header cell) because AG Grid already uses the header
 // cell's own ::before for its resize separator. Every candidate must appear
 // literally in this file — Tailwind scans source text, so no interpolation.
-const ICON_HEADER_CLASS = `${HEADER_CLASS} [&_.ag-header-cell-text]:inline-flex [&_.ag-header-cell-text]:items-center [&_.ag-header-cell-text]:gap-[5px] [&_.ag-header-cell-text]:before:font-[family-name:lucide] [&_.ag-header-cell-text]:before:text-lg [&_.ag-header-cell-text]:before:leading-none`;
+const ICON_HEADER_CLASS = `${HEADER_CLASS} [&_.ag-header-cell-text]:inline-flex [&_.ag-header-cell-text]:items-center [&_.ag-header-cell-text]:gap-[5px] [&_.ag-header-cell-text]:before:font-[family-name:lucide] [&_.ag-header-cell-text]:before:text-lg [&_.ag-header-cell-text]:before:leading-none [&_.ag-header-cell-text]:before:font-normal`;
 
 // crew/passengers/cargo_capacity are raw SWAPI strings (e.g. "30-165", "1,000,000", "unknown").
 // pilots.length is already numeric but shares the same numeric-compare path.
